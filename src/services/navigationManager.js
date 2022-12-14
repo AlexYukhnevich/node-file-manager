@@ -20,17 +20,18 @@ export class NavigationManager {
         throw new InvalidInputError();
       }
 
-      const folderList = await readdir(this.cliManager.currentDir);
-      const dirData = await Promise.all(
-        folderList.map(
-          async (f) => {
-            const stats = await stat(normalizePath(this.cliManager.currentDir, f));
-            const type = stats.isDirectory() ? 'directory' : 'file';
-            return { Name: f, Type: type };
-          }
-        )
-      );
-      dirData.sort((a, b) => a.Type > b.Type ? 1 : -1);
+      const folderList = await readdir(this.cliManager.currentDir, { withFileTypes: true });
+      const dirData = folderList.map((f) => ({ 
+        Name: f.name, 
+        Type: f.isDirectory() ? 'directory' : 'file' 
+      }));
+      
+      dirData.sort((a, b) => {
+        if (a.Type === b.Type) {
+          return a.Name < b.Name ? -1 : 1;
+        } 
+        return a.Type > b.Type ? 1 : -1;
+      });
 
       CLILogger.printTable(dirData);
       CLILogger.currentDir(this.cliManager.currentDir);
