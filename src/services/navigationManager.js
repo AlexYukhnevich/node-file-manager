@@ -1,4 +1,3 @@
-import os from 'os';
 import { readdir, stat } from 'fs/promises';
 import { OperationFailedError, InvalidInputError } from '../errors/cli.error.js';
 import { normalizePath } from '../utils/getFullPath.js';
@@ -53,8 +52,8 @@ export class NavigationManager {
       if (fStat.isFile()) {
         throw new OperationFailedError();
       }
-
-      if (normalizedPath.startsWith(os.homedir())) {
+       
+      if (normalizedPath.startsWith('/')) {
         this.cliManager.currentDir = normalizedPath;
       }
 
@@ -71,7 +70,7 @@ export class NavigationManager {
       }
       const normalizedDirPath = normalizePath(this.cliManager.currentDir, '..');
 
-      if (normalizedDirPath.startsWith(os.homedir())) {
+      if (normalizedDirPath.startsWith('/')) {
         this.cliManager.currentDir = normalizedDirPath;
       }
 
