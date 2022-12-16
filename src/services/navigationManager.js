@@ -52,11 +52,8 @@ export class NavigationManager {
       if (fStat.isFile()) {
         throw new OperationFailedError();
       }
-       
-      if (normalizedPath.startsWith('/')) {
-        this.cliManager.currentDir = normalizedPath;
-      }
-
+  
+      this.cliManager.currentDir = normalizedPath;
       CLILogger.currentDir(this.cliManager.currentDir); 
     } catch (err) {
       catchError(err);
@@ -69,11 +66,10 @@ export class NavigationManager {
         throw new InvalidInputError();
       }
       const normalizedDirPath = normalizePath(this.cliManager.currentDir, '..');
-
-      if (normalizedDirPath.startsWith('/')) {
-        this.cliManager.currentDir = normalizedDirPath;
-      }
-
+      await stat(normalizedDirPath);
+      
+      this.cliManager.currentDir = normalizedDirPath;
+  
       CLILogger.currentDir(this.cliManager.currentDir); 
     } catch (err) {
       catchError(err);

@@ -53,12 +53,16 @@ export class FileManager {
       const [f] = args;
       const normalizedPath = normalizePath(this.cliManager.currentDir, f);
       
-      await stat(path.dirname(normalizedPath));
-      await open(normalizedPath, 'w+');
-
-      CLILogger.currentDir(this.cliManager.currentDir);
+      await stat(normalizedPath);
+      throw new OperationFailedError(); // throw error if file exists.
     } catch (err) {
-      catchError(err);
+      const isNotExistedFile = err.code === 'ENOENT';
+      if (isNotExistedFile) {
+        await open(err.path, 'w+');
+        CLILogger.currentDir(this.cliManager.currentDir);
+      } else {
+        catchError(err);
+      }
     }
   }
   // rename file
