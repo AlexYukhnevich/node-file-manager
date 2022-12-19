@@ -11,9 +11,11 @@ import { CLILogger } from '../logger/logger.js';
 export class ZipManager {
   COMPRESS_ARGS_COUNT = 2;
   DECOMPRESS_ARGS_COUNT = 2;
+  ZIP_EXT = '.br'
 
   constructor(cliManager) {
     this.cliManager = cliManager;
+    this.file = null;
   }
 
   async compress(args) {
@@ -26,21 +28,26 @@ export class ZipManager {
     const normalizedDestPath = normalizePath(this.cliManager.currentDir, destF);
 
     try {
-      const [srcFStat] = await Promise.all([
+      const [srcFStat, destFStat] = await Promise.all([
         stat(normalizedSrcPath), 
-        stat(path.dirname(normalizedDestPath)),
+        stat(normalizedDestPath),
       ]);
 
-      if (srcFStat.isDirectory()) {
+      if (srcFStat.isDirectory() || destFStat.isFile()) {
         throw new OperationFailedError();
       }
 
+      this.file = srcF;
+      const srcFileNameWithoutExt = path.parse(this.file).name;
+      const destFileNameWithExt = normalizePath(normalizedDestPath, `${srcFileNameWithoutExt}${this.ZIP_EXT}`);
+      
       const readableStream = createReadStream(normalizedSrcPath); 
-      const writableStream = createWriteStream(normalizedDestPath); 
+      const writableStream = createWriteStream(destFileNameWithExt); 
       await pipeline(readableStream, createBrotliCompress(), writableStream);
 
       CLILogger.currentDir(this.cliManager.currentDir);
     } catch (err) {
+      this.file = null;
       catchError(err);
     }
   }
@@ -55,21 +62,24 @@ export class ZipManager {
     const normalizedDestPath = normalizePath(this.cliManager.currentDir, destF);
 
     try {
-      const [srcFStat] = await Promise.all([
+      const [srcFStat, destFStat] = await Promise.all([
         stat(normalizedSrcPath), 
-        stat(path.dirname(normalizedDestPath)),
+        stat(normalizedDestPath),
       ]);
    
-      if (srcFStat.isDirectory()) {
+      if (srcFStat.isDirectory() || destFStat.isFile()) {
         throw new OperationFailedError();
       }
+      console.log({ normalizedDestPath, file: this.file })
+      const destFileNameWithExt = normalizePath(normalizedDestPath, this.file); 
 
       const readableStream = createReadStream(normalizedSrcPath); 
-      const writableStream = createWriteStream(normalizedDestPath); 
+      const writableStream = createWriteStream(destFileNameWithExt); 
       await pipeline(readableStream, createBrotliDecompress(), writableStream);
 
       CLILogger.currentDir(this.cliManager.currentDir);
     } catch (err) {
+      this.file = null;
       catchError(err);
     }
   }
